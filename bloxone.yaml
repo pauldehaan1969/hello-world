@@ -1,0 +1,67 @@
+#cloud-config
+
+# Multipass build of BloxOne Bare Metal Docker environment
+# 
+# @copyright:   Copyright 2021 Infoblox Inc. All rights reserved.
+# 
+# Author: Michael Smith - Infoblox Professional Services
+#         michaels@infoblox.com
+# 
+# @license:
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     1. Redistributions of source code must retain the above copyright notice,
+#     this list of conditions and the following disclaimer.
+#     2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+# 
+# THIS SOFTWARE IS PROVIDED BY INFOBLOX AND CONTRIBUTORS ``AS IS'' AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL INFOBLOX OR CONTRIBUTORS BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# The views and conclusions contained in the software and documentation are
+# those of the authors and should not be interpreted as representing official
+# policies, either expressed or implied, of Infoblox.
+#
+#
+# multipass launch --name bloxone --mem 4G --cpus 4 --disk 8G --cloud-init bloxone.yaml
+# Version 1.0
+
+hostname: bloxone
+manage_etc_hosts: true
+ssh_pwauth: True ## This line enables ssh password authentication
+
+package_update: true
+package_upgrade: true
+
+packages:
+ - sshfs
+ - net-tools
+ - build-essential
+ 
+runcmd:
+ - curl -sSL https://get.docker.com/ | sh
+ - usermod -aG docker ubuntu
+ - curl -L "https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+ - wget https://s3.amazonaws.com/ib-noa-prod.csp.infoblox.com/BloxOne_OnPrem_Docker_4.1.5.tar.gz -O /tmp/BloxOne_OnPrem_Docker_4.1.5.tar.gz
+ - systemctl disable systemd-resolved 
+ - systemctl stop systemd-resolved
+ - systemctl disable apparmor
+ - systemctl stop apparmor
+ - rm /etc/resolv.conf
+ - echo 'nameserver 8.8.8.8' > /etc/resolv.conf
+ - docker load -i /tmp/BloxOne_OnPrem_Docker_4.1.5.tar.gz
+ - apt autoclean
+ - apt autoremove
+ - reboot
+
+
